@@ -1,5 +1,5 @@
 {
-    "name": "az13js/MatrixOperation",
+    "name": "az13js/php-conv-net",
     "description": "矩阵操作",
     "require": {
         "php": "^5.4.0"
