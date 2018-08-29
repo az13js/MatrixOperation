@@ -1,0 +1,8 @@
+{
+    "name": "az13js/php-conv-net",
+    "description": "PHP卷积神经网络库",
+    "require": {
+        "php": "^5.4.0",
+        "another-vendor/package": "1.*"
+    }
+}
