@@ -1,5 +1,5 @@
 {
-    "name": "az13js/php-conv-net",
+    "name": "az13js/MatrixOperation",
     "description": "PHP卷积神经网络库",
     "require": {
         "php": "^5.4.0",
