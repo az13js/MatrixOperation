@@ -1,12 +1,13 @@
 <?php
+namespace App\Matrix;
+
 /**
  * 二维矩阵类
  *
  * 运算过程中，假如出现如矩阵尺寸不符合计算要求的情况时，会抛出 \Exception
  * 异常
  *
- * @author az13js
- * @version 0.0.1
+ * @author mengshaoying
  */
 class Matrix
 {
@@ -98,6 +99,42 @@ class Matrix
     }
 
     /**
+     * 求平方和
+     *
+     * 计算当前矩阵的所有元素的各自的平方的和并返回
+     *
+     * @return float
+     */
+    public function squareSum()
+    {
+        $sum = 0;
+        foreach ($this->matrix as &$row) {
+            foreach ($row as $v) {
+                $sum += $v * $v;
+            }
+        }
+        return $sum;
+    }
+
+    /**
+     * 求哈希
+     *
+     * 计算当前矩阵进行哈希
+     *
+     * @return string
+     */
+    public function hash()
+    {
+        $str = $this->row().'x'.$this->col();
+        foreach ($this->matrix as &$row) {
+            foreach ($row as $v) {
+                $str .= ','.$v;
+            }
+        }
+        return hash('sha256', $str);
+    }
+
+    /**
      * 将自身的值设置为 0
      *
      * @return $this
@@ -122,6 +159,23 @@ class Matrix
         foreach ($this->matrix as &$row) {
             foreach ($row as &$val) {
                 $val = 1;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * 每个元素求平方
+     *
+     * 计算当前矩阵的所有元素的各自的平方
+     *
+     * @return $this
+     */
+    public function selfSquare()
+    {
+        foreach ($this->matrix as &$row) {
+            foreach ($row as &$v) {
+                $v = $v * $v;
             }
         }
         return $this;
@@ -231,6 +285,128 @@ class Matrix
     }
 
     /**
+     * 将当前矩阵中大于0的数改为1，小于或等于0的数改为0
+     *
+     * @return $this
+     */
+    public function selfToBool()
+    {
+        foreach ($this->matrix as &$row) {
+            foreach ($row as &$v) {
+                $v = $v > 0 ? 1 : 0;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * 自我线性归一化
+     *
+     * @param float $min 最小值
+     * @param float $max 最大值
+     * @return $this
+     */
+    public function selfMinMax($min, $max)
+    {
+        $nmin = $nmax = $this->matrix[0][0];
+        foreach ($this->matrix as &$row) {
+            foreach ($row as $v) {
+                $nmin = $v < $nmin ? $v : $nmin;
+                $nmax = $v > $nmax ? $v : $nmax;
+            }
+        }
+        $k = ($nmax - $nmin) > 0 ? ($max - $min) / ($nmax - $nmin) : 0;
+        $b = $min - $k * $nmin;
+        foreach ($this->matrix as &$row) {
+            foreach ($row as &$v) {
+                $v = $k * $v + $b;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * 自我削波
+     *
+     * 小于最小值的等于最小值，大于最大值的等于最大值
+     *
+     * @param float $min 最小值
+     * @param float $max 最大值
+     * @return $this
+     */
+    public function selfHardCut($min, $max)
+    {
+        foreach ($this->matrix as &$row) {
+            foreach ($row as &$v) {
+                $v = $v < $min ? $min : ($v > $max ? $max : $v);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * 将当前矩阵变形为1行多列的矩阵
+     *
+     * @return $this
+     */
+    public function to1d()
+    {
+        $matrix = array(array());
+        foreach ($this->matrix as &$row) {
+            foreach ($row as $v) {
+                $matrix[0][] = $v;
+            }
+        }
+        $this->matrix = $matrix;
+        return $this;
+    }
+
+    /**
+     * 重建矩阵
+     *
+     * @param int $row 行
+     * @param int $col 列
+     * @return $this
+     */
+    public function rebuild($row, $col)
+    {
+        $this->matrix = array();
+        for ($j = 0; $j < $row; $j++) {
+            $this->matrix[$j] = array();
+            for ($i = 0; $i < $col; $i++) {
+                $this->matrix[$j][$i] = 0;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * 重设矩阵行数和列数
+     *
+     * @param int $row 行
+     * @param int $col 列
+     * @return $this
+     */
+    public function selfReshape($row, $col)
+    {
+        $matrix = array(array());
+        $r = 0;
+        $c = 0;
+        foreach ($this->matrix as &$row) {
+            foreach ($row as $v) {
+                $matrix[$r][] = $v;
+                $c++;
+                if ($c >= $col) {
+                    $c = 0;
+                    $r++;
+                }
+            }
+        }
+        $this->matrix = $matrix;
+        return $this;
+    }
+
+    /**
      * 从当前矩阵复制全部或部分区域，形成新的矩阵并返回
      *
      * 此方法的参数都有默认值，不传值情况下复制自身所有元素。换言之
@@ -284,6 +460,7 @@ class Matrix
                 $this->val($i + 1, $j + 1, $copyZoom->val($i + 1, $j + 1));
             }
         }
+        return $this;
     }
 
     /**
@@ -372,6 +549,70 @@ class Matrix
     }
 
     /**
+     * 转换出一个新的矩阵，当前矩阵中大于0的数将转为1，否则转为0
+     *
+     * @return Matrix
+     */
+    public function toBool()
+    {
+        return (new Matrix($this->matrix))->selfToBool();
+    }
+
+    /**
+     * 转换出一个新的矩阵，并线性归一化
+     *
+     * @param float $min 最小值
+     * @param float $max 最大值
+     * @return Matrix
+     */
+    public function minMax($min, $max)
+    {
+        return (new Matrix($this->matrix))->selfMinMax($min, $max);
+    }
+
+    /**
+     * 削波
+     *
+     * 小于最小值的等于最小值，大于最大值的等于最大值
+     *
+     * @param float $min 最小值
+     * @param float $max 最大值
+     * @return Matrix
+     */
+    public function hardCut($min, $max)
+    {
+        return (new Matrix($this->matrix))->selfHardCut($min, $max);
+    }
+
+    /**
+     * 重设矩阵行数和列数，获得新矩阵而不改变现有值
+     *
+     * @param int $row 行
+     * @param int $col 列
+     * @return $this
+     */
+    public function reshape($row, $col)
+    {
+        if ($row * $col != $this->row() * $this->col()) {
+            throw new \Exception('Error, elements number not equal! (You want)['.$row.'x'.$col.']!=(we have)['.$this->row().'x'.$this->col().']');
+        }
+        $matrix = array(array());
+        $r = 0;
+        $c = 0;
+        foreach ($this->matrix as &$row) {
+            foreach ($row as $v) {
+                $matrix[$r][] = $v;
+                $c++;
+                if ($c >= $col) {
+                    $c = 0;
+                    $r++;
+                }
+            }
+        }
+        return new Matrix($matrix);
+    }
+
+    /**
      * 将当前矩阵与一个作为卷积核的矩阵进行卷积运算，返回一个新的矩阵
      *
      * @param Matrix $core 另一个矩阵，作为卷积核
@@ -396,5 +637,103 @@ class Matrix
             }
         }
         return new Matrix($res);
+    }
+
+    /**
+     * 反卷积，返回一个新的矩阵
+     *
+     * @param Matrix $core 另一个矩阵，作为卷积核
+     * @return Matrix
+     */
+    public function disConv($core)
+    {
+        $row = $this->row();
+        $col = $this->col();
+        $c_row = $core->row();
+        $c_col = $core->col();
+
+        $res = array();
+        $res_row = $row + $c_row - 1;
+        $res_col = $col + $c_col - 1;
+        for ($i = 0; $i < $res_row; $i++) {
+            $res[$i] = array();
+            for ($j = 0; $j < $res_col; $j++) {
+                $res[$i][$j] = 0;
+            }
+        }
+        for ($i = 0; $i < $row; $i++) {
+            for ($j = 0; $j < $col; $j++) {
+                for ($n = 0; $n < $c_row; $n++) {
+                    for ($m = 0; $m < $c_col; $m++) {
+                        $res[$i + $n][$j + $m] += $core->val($n + 1, $m + 1) * $this->matrix[$i][$j];
+                    }
+                }
+            }
+        }
+        return new Matrix($res);
+    }
+
+    /**
+     * 哈希卷积
+     *
+     * 以指定的大小作为“卷积核”，对当前矩阵进行区域提取，对提取区域进行矩阵哈
+     * 希，以哈希字符作为运算结果形成新的矩阵。新的矩阵是字符串矩阵，不能进行
+     * 数值运算。
+     *
+     * @param int $crow 卷积核行数
+     * @param int $ccol 卷积核列数
+     * @return Matrix
+     */
+    public function hashConv($crow, $ccol)
+    {
+        $row = $this->row();
+        $col = $this->col();
+        $c_row = $crow;
+        $c_col = $ccol;
+        if ($c_row > $row || $c_col > $col) {
+            throw new \Exception("Error, conv core too big!");
+        }
+        $res = array();
+        $res_row = $row - $c_row + 1;
+        $res_col = $col - $c_col + 1;
+        for ($i = 0; $i < $res_row; $i++) {
+            $res[$i] = array();
+            for ($j = 0; $j < $res_col; $j++) {
+                $res[$i][$j] = $this->copy($i + 1, $j + 1, $c_col, $c_row)->hash();
+            }
+        }
+        return new Matrix($res);
+    }
+
+    /**
+     * 获取给定矩阵的完全展开散列云
+     *
+     * @param int $crow 卷积核行数
+     * @param int $ccol 卷积核列数
+     * @return array 哈希字符串出现次数组成的数组，键名是散列，键值是出现的层数
+     */
+    public function hashCloud($crow = 3, $ccol = 3)
+    {
+        $result = $this;
+        $row = $result->row();
+        $col = $result->col();
+        $cloud = array();
+        $deep = 0;/* 第几层，从1开始数 */
+        while ($row >= $crow && $col >= $ccol) {
+            $deep++;
+            $result = $result->hashConv($crow, $ccol);
+            $row = $result->row();
+            $col = $result->col();
+            for ($i = 0; $i < $row; $i++) {
+                for ($j = 0; $j < $col; $j++) {
+                    $a_ij = $result->val($i + 1, $j + 1);
+                    if (!isset($cloud[$a_ij])) {
+                        $cloud[$a_ij] = $deep;
+                    }
+                }
+            }
+        }
+        //return array_keys($cloud);
+        return $cloud;
     }
 }

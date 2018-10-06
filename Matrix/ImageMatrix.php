@@ -1,4 +1,6 @@
 <?php
+namespace App\Matrix;
+
 /**
  * 图像矩阵
  *
@@ -7,8 +9,7 @@
  *
  * 假如图片是png格式，有透明度的话，透明度会被忽略
  *
- * @author az13js
- * @version 0.0.1
+ * @author mengshaoying
  */
 class ImageMatrix extends Matrix
 {
@@ -28,8 +29,9 @@ class ImageMatrix extends Matrix
      * 构造方法，传入图片文件路径
      *
      * @param string $file
+     * @param string $mod 颜色通道，默认将RGB求和取灰度值。可以是字符r, g, b
      */
-    public function __construct($file)
+    public function __construct($file, $mod = 'default')
     {
         if (!is_file($file)) {
             throw new \Exception("File({$file}) not exists!");
@@ -62,7 +64,19 @@ class ImageMatrix extends Matrix
                 $r = ($matrix[$i][$j] >> 16) & 0xFF;
                 $g = ($matrix[$i][$j] >> 8) & 0xFF;
                 $b = $matrix[$i][$j] & 0xFF;
-                $matrix[$i][$j] = ($r + $g + $b) / (255 * 3);
+                switch ($mod) {
+                    case 'r':
+                        $matrix[$i][$j] = $r / 255;
+                        break;
+                    case 'g':
+                        $matrix[$i][$j] = $g / 255;
+                        break;
+                    case 'b':
+                        $matrix[$i][$j] = $b / 255;
+                        break;
+                    default:
+                        $matrix[$i][$j] = ($r + $g + $b) / (255 * 3);
+                }
             }
         }
         parent::__construct($matrix);
@@ -73,19 +87,33 @@ class ImageMatrix extends Matrix
      */
     public function __destruct()
     {
-        imagedestroy($this->imageResource);
+        if (is_resource($this->imageResource)) {
+            imagedestroy($this->imageResource);
+        }
     }
 
     /**
      * 保存当前矩阵的数值为一张PNG格式的图片
      *
-     * 元素的值范围视为[0,1]，乘以255，上色时取整，最后小于0的当做0，大于
-     * 255的当做255
-     *
      * @param string $file
      * @return bool
      */
     public function savePng($file)
+    {
+        return $this->save($file);
+    }
+
+    /**
+     * 保存矩阵为图片
+     *
+     * 元素的值范围视为[0,1]，乘以255，上色时取整，最后小于0的当做0，大于
+     * 255的当做255
+     *
+     * @param string $file
+     * @param string $type '.png' 或 '.jpg'
+     * @return bool
+     */
+    public function save($file, $type = '.png')
     {
         $w = $this->col();
         $h = $this->row();
@@ -102,7 +130,17 @@ class ImageMatrix extends Matrix
                 imagesetpixel($img, $j, $i, imagecolorallocate($img, $color, $color, $color));
             }
         }
-        if (!imagepng($img, $file)) {
+        switch ($type) {
+            case '.png':
+                $result = imagepng($img, $file);
+                break;
+            case '.jpg':
+                $result = imagejpeg($img, $file);
+                break;
+            default:
+                $result = false;
+        }
+        if (!$result) {
             imagedestroy($img);
             return false;
         }
